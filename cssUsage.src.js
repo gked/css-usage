@@ -1547,44 +1547,31 @@ void function() { try {
     Description: usage of elementFromPoint in script tags
 */
 void function() {
-    window.CSSUsage.StyleWalker.recipesToRun.push( function getElementFromPointUsage( element, results) {
-
-    	if(element.nodeName === "SCRIPT"){
-    		if(element.innerText.indexOf("elementFromPoint") !== -1){
-    			results["use"] = results["use"] || {count: 0};
-    			results["use"].count++;
-    		}
-    	}
+    window.CSSUsage.StyleWalker.recipesToRun.push( function getElementFromPointUsage(/*HTML DOM Element*/ element, results) {
+        var nodeName = element.nodeName;
+        var script = ".elementFromPoint"
+        if (nodeName == "SCRIPT")
+        {
+            results[nodeName] = results[nodeName] || { count: 0, };
+            // if inline script. ensure that it's not our recipe script and look for string of interest
+            if (element.text !== undefined && element.text.indexOf(script) != -1)
+            {
+                results[nodeName].count++;
+            }
+            else if (element.src !== undefined && element.src != "")
+            {
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", element.src, false);
+                xhr.send();
+                if (xhr.status === 200 && xhr.responseText.indexOf(script) != -1)
+                {
+                    results[nodeName].count++;
+                }
+            }
+        }
         return results;
     });
 }();
-/* 
-    RECIPE: z-index on static flex items
-    -------------------------------------------------------------
-    Author: Francois Remy
-    Description: Get count of flex items who should create a stacking context but do not really
-*/
-
-void function() {
-
-    window.CSSUsage.StyleWalker.recipesToRun.push( function zstaticflex(/*HTML DOM Element*/ element, results) {
-        if(!element.parentElement) return;
-
-        // the problem happens if the element is a flex item with static position and non-auto z-index
-        if(getComputedStyle(element.parentElement).display != 'flex') return results;
-        if(getComputedStyle(element).position != 'static') return results;
-        if(getComputedStyle(element).zIndex != 'auto') {
-            results.likely = 1;
-        }
-
-        // the problem might happen if z-index could ever be non-auto
-        if(element.CSSUsage["z-index"] && element.CSSUsage["z-index"].valuesArray.length > 0) {
-            results.possible = 1;
-        }
-
-    });
-}();
-
 //
 // This file is only here to create the TSV
 // necessary to collect the data from the crawler
